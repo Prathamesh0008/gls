@@ -7,12 +7,24 @@ export const runtime = "nodejs";
 
 export async function POST(req) {
   try {
+    console.log("🔐 LOGIN HIT");
+
     await dbConnect();
 
-    const body = await req.json().catch(() => null);
-    if (!body) {
+    const raw = await req.text();
+    if (!raw) {
       return Response.json(
-        { error: true, message: "Invalid JSON body" },
+        { error: true, message: "Empty request body" },
+        { status: 400 }
+      );
+    }
+
+    let body;
+    try {
+      body = JSON.parse(raw);
+    } catch {
+      return Response.json(
+        { error: true, message: "Invalid JSON" },
         { status: 400 }
       );
     }
@@ -26,24 +38,24 @@ export async function POST(req) {
       );
     }
 
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET is missing");
+    }
+
     const user = await User.findOne({ email });
     if (!user) {
       return Response.json(
-        { error: true, message: "Invalid email or password" },
+        { error: true, message: "Invalid credentials" },
         { status: 401 }
       );
     }
 
-    const ok = await bcrypt.compare(password, user.passwordHash);
-    if (!ok) {
+    const match = await bcrypt.compare(password, user.passwordHash);
+    if (!match) {
       return Response.json(
-        { error: true, message: "Invalid email or password" },
+        { error: true, message: "Invalid credentials" },
         { status: 401 }
       );
-    }
-
-    if (!process.env.JWT_SECRET) {
-      throw new Error("JWT_SECRET is not defined");
     }
 
     const token = jwt.sign(
@@ -62,9 +74,9 @@ export async function POST(req) {
     });
 
   } catch (err) {
-    console.error("❌ LOGIN ERROR:", err);
+    console.error("❌ LOGIN CRASH:", err);
     return Response.json(
-      { error: true, message: "Login failed" },
+      { error: true, message: err.message || "Login failed" },
       { status: 500 }
     );
   }
