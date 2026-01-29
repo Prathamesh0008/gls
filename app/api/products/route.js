@@ -1,11 +1,12 @@
-import { dbConnect } from "@/lib/db";
-import Product from "@/models/Product";
+import { PRODUCTS } from "@/lib/products";
 
+export const dynamic = "force-dynamic";
 
 export async function GET() {
-  await dbConnect();
-
-
-  const products = await Product.aggregate([{ $sample: { size: 10 } }]);
-  return Response.json({ error: false, products });
+  // Shuffle & return 10 (already 10, but keeps logic clean)
+  const shuffled = [...PRODUCTS].sort(() => 0.5 - Math.random());
+  return Response.json({
+    error: false,
+    products: shuffled.slice(0, 10),
+  });
 }

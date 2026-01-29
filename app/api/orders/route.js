@@ -4,6 +4,7 @@ import Product from "@/models/Product";
 import { getBearerToken, verifyToken } from "@/lib/auth";
 import { createGlsLabel } from "@/lib/gls";
 import { zplToPdf } from "@/lib/labelary";
+import { PRODUCTS } from "@/lib/products";
 
 /**
  * CREATE ORDER + GLS LABEL
@@ -60,9 +61,10 @@ export async function POST(req) {
       );
     }
 
-    const dbProducts = await Product.find({
-      _id: { $in: productIds },
-    });
+ const dbProducts = PRODUCTS.filter((p) =>
+  productIds.includes(p.id)
+);
+
 
     if (dbProducts.length === 0) {
       return Response.json(
@@ -71,20 +73,19 @@ export async function POST(req) {
       );
     }
 
-    const items = cartItems
-      .map((c) => {
-        const p = dbProducts.find(
-          (x) => x._id.toString() === c.productId
-        );
-        if (!p) return null;
-        return {
-          productId: p._id,
-          name: p.name,
-          price: p.price,
-          qty: Number(c.qty || 1),
-        };
-      })
-      .filter(Boolean);
+   const items = cartItems
+  .map((c) => {
+    const p = dbProducts.find((x) => x.id === c.productId);
+    if (!p) return null;
+    return {
+      productId: p.id,
+      name: p.name,
+      price: p.price,
+      qty: Number(c.qty || 1),
+    };
+  })
+  .filter(Boolean);
+
 
     if (items.length === 0) {
       return Response.json(
