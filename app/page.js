@@ -14,7 +14,8 @@ export default function Home() {
   const [msg, setMsg] = useState("");
 
   useEffect(() => {
-    fetch("/api/products").then(r => r.json()).then(d => setProducts(d.products || []));
+    fetch("/api/products", { cache: "no-store" })
+.then(r => r.json()).then(d => setProducts(d.products || []));
   }, []);
 
   function addToCart(productId) {
